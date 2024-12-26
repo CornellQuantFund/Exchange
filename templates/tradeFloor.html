@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade Floor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            padding: 20px;
+        }
+        .order-form {
+            margin-bottom: 20px;
+        }
+        .order-form label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .order-form input, .order-form select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        .order-form button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .order-form button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Trade Floor</h1>
+        <form class="order-form" action="/submit_order" method="post">
+            <label for="contract">Contract:</label>
+            <select id="contract" name="contract">
+                <option value="contract1">Contract 1</option>
+                <option value="contract2">Contract 2</option>
+                <option value="contract3">Contract 3</option>
+            </select>
+
+            <label for="order-type">Order Type:</label>
+            <select id="order-type" name="order-type">
+                <option value="market">Market</option>
+                <option value="limit">Limit</option>
+            </select>
+
+            <label for="order-side">Order Side:</label>
+            <select id="order-side" name="order-side">
+                <option value="buy">Buy</option>
+                <option value="sell">Sell</option>
+            </select>
+
+            <label for="price">Price:</label>
+            <input type="number" id="price" name="price" step="0.01" placeholder="Enter price">
+
+            <label for="quantity">Quantity:</label>
+            <input type="number" id="quantity" name="quantity" placeholder="Enter quantity">
+
+            <button type="submit">Place Order</button>
+        </form>
+    </div>
+</body>
+</html>
