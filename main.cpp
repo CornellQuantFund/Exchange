@@ -1,19 +1,20 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include "../include/order.h"
+#include "include/exchange.h"
 #include "httplib.h" // Requires cpp-httplib (https://github.com/yhirose/cpp-httplib)
 
 using namespace std;
 using namespace httplib;
 
+Exchange session(3);
 static vector<string> users;
 
 int main() {
     Server svr;
     svr.set_mount_point("/static", "./static");
 
-    // Serve the index.html file
+    // Home Page for log in
     svr.Get("/", [&](const Request& req, Response& res) {
         ifstream file("templates/home.html");
         if (file) {
@@ -30,12 +31,17 @@ int main() {
         auto username = req.get_param_value("username");
         if (!username.empty()) {
             users.push_back(username);
+
+            Trader newTrader(username, 0, {});
+            session.addTrader(newTrader);
+            std::cout << "User added: " << newTrader.getName() << " " << newTrader.getId() << " " << std::endl;
         }
-        res.set_content("<h2>User added successfully!</h2><a href=\"/trading\">Go to Trading Floor</a><br><a href=\"/users\">View Current Users</a>", "text/html");
+
+        res.set_content("<h2>User added successfully!</h2><a href=\"/tradeFloor\">Go to Trading Floor</a><br><a href=\"/users\">View Current Users</a><br><a href=\"/orderbook\">OrderBookInfo</a><br>", "text/html");
     });
 
     // Serve the trading floor page
-    svr.Get("/tradefloor", [&](const Request& req, Response& res) {
+    svr.Get("/tradeFloor", [&](const Request& req, Response& res) {
         ifstream file("templates/tradeFloor.html");
         if (file) {
             stringstream buffer;
@@ -46,22 +52,114 @@ int main() {
         }
     });
 
-    // Handle order submission
-    // svr.Post("/submit_order", [&](const Request& req, Response& res) {
-    //     Order order(
-    //         req.get_param_value("contract"),
-    //         req.get_param_value("order-type"),
-    //         req.get_param_value("order-side"),
-    //         stod(req.get_param_value("price")),
-    //         stoi(req.get_param_value("quantity"))
-    //     );
-    //     OrderBook.add(order);
-    //     Trader.addOrder(order);
+    // Handle order submission in main.cpp
+    svr.Post("/submit_order", [&](const Request& req, Response& res) {
+        try {
+            int contract = stoi(req.get_param_value("contract")) - 1; // Contracts 1 indexed
+            string orderType = req.get_param_value("order-type");
+            string orderSide = req.get_param_value("order-side");
+            double price = stod(req.get_param_value("price"));
+            int quantity = stoi(req.get_param_value("quantity"));
+            int id = stoi(req.get_param_value("id"));
 
-    //     res.set_content("Order placed successfully!", "text/plain");
-    // });
+            // Pass the order details to the exchange
+            session.placeOrder(contract, orderType, orderSide, price, quantity, id);
+            
+            for (auto& u : session.getOrderBooks()) {
+                cout << u->Size() << endl;
+            }
+
+            res.set_content("Order placed successfully!", "text/plain");
+        } catch (const exception& e) {
+            res.set_content("Error placing order: " + string(e.what()), "text/plain");
+        }
+    });
+
+    // Display the orderbook
+    svr.Get("/orderbook", [&](const Request& req, Response& res) {
+        try {
+            // Retrieve the number of order books
+            size_t numOrderBooks = session.getNumOrderBooks();
+            string html;
+
+            // Start building the HTML with navigation
+            html += R"(
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Order Books</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f4f4f4; }
+                        .tab { margin: 10px 0; cursor: pointer; display: inline-block; padding: 10px 15px; border: 1px solid #ddd; background-color: #f4f4f4; }
+                        .tab.active { background-color: #ddd; font-weight: bold; }
+                        .orderbook { display: none; }
+                        .orderbook.active { display: block; }
+                    </style>
+                    <script>
+                        function showOrderbook(index) {
+                            let orderbooks = document.querySelectorAll('.orderbook');
+                            let tabs = document.querySelectorAll('.tab');
+                            orderbooks.forEach((book, i) => {
+                                book.style.display = i === index ? 'block' : 'none';
+                                tabs[i].classList.toggle('active', i === index);
+                            });
+                        }
+                    </script>
+                </head>
+                <body>
+                    <h1>Order Books</h1>
+            )";
+
+            // Add tabs for navigation
+            for (int i = 0; i < numOrderBooks; ++i) {
+                html += "<div class='tab' onclick='showOrderbook(" + to_string(i) + ")'>Order Book " + to_string(i + 1) + "</div>";
+            }
+
+            // Generate order book tables
+            for (int i = 0; i < numOrderBooks; ++i) {
+                auto& orderBook = session.getOrderBook(i); // Access the Orderbook using the updated Exchange class
+                OrderbookLevelInfos orderBookInformation = orderBook.GetOrderInfos();
+
+                html += "<div class='orderbook' id='orderbook-" + to_string(i) + "'" + (i == 0 ? " style='display:block;'" : "") + ">";
+                html += "<h2>Order Book " + to_string(i + 1) + "</h2>";
+                html += "<table><tr><th>Bids</th><th>Asks</th></tr><tr>";
+                
+                // Add bids
+                html += "<td><ul>";
+                for (const auto& bid : orderBookInformation.GetBids()) {
+                    html += "<li>Price: " + to_string(bid.price_) + " Quantity: " + to_string(bid.quantity_) + "</li>";
+                }
+                html += "</ul></td>";
+                
+                // Add asks
+                html += "<td><ul>";
+                for (const auto& ask : orderBookInformation.GetAsks()) {
+                    html += "<li>Price: " + to_string(ask.price_) + " Quantity: " + to_string(ask.quantity_) + "</li>";
+                }
+                html += "</ul></td>";
+                
+                html += "</tr></table></div>";
+            }
+
+            // End HTML
+            html += R"(
+                </body>
+                </html>
+            )";
+
+            // Set content
+            res.set_content(html, "text/html");
+        } catch (const std::exception& e) {
+            res.set_content("Error: " + string(e.what()), "text/plain");
+        }
+    });
+
 
     // Display current users
+
     svr.Get("/users", [&](const Request& req, Response& res) {
         string response = "<h2>Current Users:</h2><ul>";
         for (auto& u : users) {

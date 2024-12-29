@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html>
-<head><title>Trading Name</title></head>
+<head><title>Trading Page</title></head>
 <body>
   <h1>Enter your trading name</h1>
   <form action="/submit" method="post">
     <input type="text" name="username" required />
     <button type="submit">Submit</button>
   </form>
+  <h2>Session Controls</h2>
+  <a href="/startSession"><button>Start Session</button></a>
+  <a href="/endSession"><button>End Session</button></a>
 </body>
 </html>
