@@ -26,4 +26,14 @@ public:
     void addOrderToTrader(OrderPointer order) {
         orders.push_back(order);
     }
+
+    vector<OrderPointer>& getOrders() { return orders; }
+
+    string getOrdersFormatted() {
+        string formatted = "";
+        for (auto& order : orders) {
+            formatted += "Order ID: " + to_string(order->GetOrderId()) + " Side: " + (order->GetSide() == Side::Buy ? "Buy" : "Sell") + " Price: " + to_string(order->GetPrice()) + " Quantity: " + to_string(order->GetRemainingQuantity()) + "\n";
+        }
+        return formatted;
+    }
 };

@@ -3,15 +3,18 @@
 #include <string>
 #include "include/exchange.h"
 #include "httplib.h" // Requires cpp-httplib (https://github.com/yhirose/cpp-httplib)
+#include "inja/inja.hpp" 
 
 using namespace std;
 using namespace httplib;
+using json = nlohmann::json;
 
 Exchange session(3);
 static vector<string> users;
+static unordered_map<string, int> traderIDs;
 
 int main() {
-    Server svr;
+    httplib::Server svr;
     svr.set_mount_point("/static", "./static");
 
     // Home Page for log in
@@ -29,29 +32,80 @@ int main() {
     // Handle form submission for adding users
     svr.Post("/submit", [&](const Request& req, Response& res) {
         auto username = req.get_param_value("username");
-        if (!username.empty()) {
+        if (!username.empty() && traderIDs.find(username) == traderIDs.end()) {
             users.push_back(username);
 
-            Trader newTrader(username, 0, {});
+            Trader newTrader(username, 0, vector<OrderPointer>());
             session.addTrader(newTrader);
-            std::cout << "User added: " << newTrader.getName() << " " << newTrader.getId() << " " << std::endl;
+            traderIDs[username] = newTrader.getId();
+            
+            inja::Environment env;
+            auto tmpl = env.parse_template("templates/tradeFloor.html");
+            json data;
+            data["username"] = username;
+            data["id"] = to_string(traderIDs[username]);
+            data["tradeData"] = "";
+            string rendered = env.render(tmpl, data);
+            res.set_content(rendered, "text/html");
         }
-
-        res.set_content("<h2>User added successfully!</h2><a href=\"/tradeFloor\">Go to Trading Floor</a><br><a href=\"/users\">View Current Users</a><br><a href=\"/orderbook\">OrderBookInfo</a><br>", "text/html");
+        else {
+            res.set_content("Error: Username already exists or is empty", "text/plain");
+            return;
+        }
     });
 
     // Serve the trading floor page
-    svr.Get("/tradeFloor", [&](const Request& req, Response& res) {
-        ifstream file("templates/tradeFloor.html");
-        if (file) {
-            stringstream buffer;
-            buffer << file.rdbuf();
-            res.set_content(buffer.str(), "text/html");
-        } else {
-            res.set_content("Error: Could not open tradeFloor.html", "text/plain");
+    // svr.Get("/tradeFloor", [&](const Request& req, Response& res) {
+    //     ifstream file("templates/tradeFloor.html");
+    //     if (file) {
+    //         stringstream buffer;
+    //         buffer << file.rdbuf();
+    //         res.set_content(buffer.str(), "text/html");
+    //     } else {
+    //         res.set_content("Error: Could not open tradeFloor.html", "text/plain");
+    //     }
+    // });
+
+    svr.Post("/tradeFloor", [&](const Request& req, Response& res) {
+        string username = req.get_param_value("username");
+        int currTraderID = traderIDs[username];
+        string submissionContent;
+        std::cout << "User: " << username << " ID: " << currTraderID << std::endl;
+
+        if (req.get_param_value("isSubmitted") == "true") {
+            try {
+                int contract = stoi(req.get_param_value("contract")) - 1; // Contracts 1 indexed
+                string orderType = req.get_param_value("order-type");
+                string orderSide = req.get_param_value("order-side");
+                double price = stod(req.get_param_value("price"));
+                int quantity = stoi(req.get_param_value("quantity"));
+
+                // Pass the order details to the exchange
+                session.placeOrder(contract, orderType, orderSide, price, quantity, currTraderID);
+                
+                for (auto& u : session.getOrderBooks()) {
+                    std::cout << u->Size() << std::endl;
+                }
+
+            } 
+            catch (const exception& e) {
+                submissionContent += "Error placing order: " + string(e.what());
+            }
         }
+
+        inja::Environment env;
+        // Load and parse the template
+        auto tmpl = env.parse_template("templates/tradeFloor.html");
+        // Prepare data for placeholders
+        json data;
+        data["username"] = username;
+        data["id"] = currTraderID;
+        data["tradeData"] = session.getTrader(currTraderID).getOrdersFormatted() + "\n";
+        string rendered = env.render(tmpl, data);
+        res.set_content(rendered, "text/html");
     });
 
+    
     // Handle order submission in main.cpp
     svr.Post("/submit_order", [&](const Request& req, Response& res) {
         try {
@@ -60,7 +114,7 @@ int main() {
             string orderSide = req.get_param_value("order-side");
             double price = stod(req.get_param_value("price"));
             int quantity = stoi(req.get_param_value("quantity"));
-            int id = stoi(req.get_param_value("id"));
+            int id = traderIDs[req.get_param_value("username")];
 
             // Pass the order details to the exchange
             session.placeOrder(contract, orderType, orderSide, price, quantity, id);
@@ -81,6 +135,7 @@ int main() {
             // Retrieve the number of order books
             size_t numOrderBooks = session.getNumOrderBooks();
             string html;
+
 
             // Start building the HTML with navigation
             html += R"(

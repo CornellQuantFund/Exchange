@@ -11,9 +11,8 @@ void Exchange::placeOrder(const int contract, const string& orderType, const str
     Side side = (order_side == "buy") ? Side::Buy : Side::Sell;
     OrderType type = (orderType == "limit") ? OrderType::GoodTillCancel : OrderType::Market;
 
-    OrderPointer order = make_shared<Order>(type, OrderID++, side, price, quantity);
-    Trader trader = traders[traderID];
-    trader.addOrderToTrader(order);
+    OrderPointer order = make_shared<Order>(type, OrderID++, side, price, quantity, contract);
+    traders[traderID].addOrderToTrader(order);
 
     // Add the order to the Orderbook
     Trades trades = orderBooks[contract]->AddOrder(order);
