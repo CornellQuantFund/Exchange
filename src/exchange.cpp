@@ -113,8 +113,8 @@ void Exchange::calculateTradersPnl() {
             int buyQuantity = completedTrades["buy"]["quantity"];
             int sellQuantity = completedTrades["sell"]["quantity"];
 
-            double buyerPnl = (buyPrice - contractPrices[contract]) * buyQuantity;
-            double sellerPnl = (contractPrices[contract] - sellPrice) * sellQuantity;
+            double buyerPnl = (contractPrices[contract] - buyPrice) * buyQuantity;
+            double sellerPnl = (sellPrice - contractPrices[contract]) * sellQuantity;
 
             traders[buyerId].addProfit(buyerPnl);
             traders[sellerId].addProfit(sellerPnl);
