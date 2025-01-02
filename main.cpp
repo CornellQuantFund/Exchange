@@ -14,6 +14,11 @@ static vector<string> users;
 static unordered_map<string, int> traderIDs;
 
 int main() {
+    // Clear the contents of completed.json file before starting the server
+    ofstream completedFile("completed.json", ofstream::out | ofstream::trunc);
+    completedFile.close();
+
+    
     httplib::Server svr;
     svr.set_mount_point("/static", "./static");
 
@@ -53,18 +58,6 @@ int main() {
             return;
         }
     });
-
-    // Serve the trading floor page
-    // svr.Get("/tradeFloor", [&](const Request& req, Response& res) {
-    //     ifstream file("templates/tradeFloor.html");
-    //     if (file) {
-    //         stringstream buffer;
-    //         buffer << file.rdbuf();
-    //         res.set_content(buffer.str(), "text/html");
-    //     } else {
-    //         res.set_content("Error: Could not open tradeFloor.html", "text/plain");
-    //     }
-    // });
 
     svr.Post("/tradeFloor", [&](const Request& req, Response& res) {
         string username = req.get_param_value("username");
@@ -199,6 +192,13 @@ int main() {
                 html += "</tr></table></div>";
             }
 
+            // Add form for calculating PnL
+            html += R"(
+                <form action="/calcPnL" method="post" style="margin-top: 20px;">
+                    <button type="submit">Calculate Traders PnL</button>
+                </form>
+            )";
+
             // End HTML
             html += R"(
                 </body>
@@ -212,6 +212,11 @@ int main() {
         }
     });
 
+    // Add route for calculating PnL
+    svr.Post("/calcPnL", [&](const Request& req, Response& res) {
+        session.calculateTradersPnl();
+        res.set_content("PnL calculation complete.", "text/plain");
+    });
 
     // Display current users
 

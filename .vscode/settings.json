@@ -63,6 +63,9 @@
         "unordered_set": "cpp",
         "variant": "cpp",
         "algorithm": "cpp",
-        "format": "cpp"
+        "format": "cpp",
+        "any": "cpp",
+        "span": "cpp",
+        "valarray": "cpp"
     }
 }

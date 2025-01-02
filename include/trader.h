@@ -20,6 +20,8 @@ public:
     Trader() : id(id_counter++), name(""), pnl(0), orders({}) {} // Default constructor
 
     double getPnl() { return pnl; }
+    void setPnl(double pnl) { this->pnl = pnl; }
+    void addProfit(double profit) { pnl += profit; }
     string getName() { return name; }
     int getId() { return id; }
 
