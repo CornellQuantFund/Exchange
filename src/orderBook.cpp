@@ -218,17 +218,14 @@ Trades Orderbook::MatchOrders(Side side)
 				asks.pop_front();
 				orders_.erase(ask->GetOrderId());
 			}
+			
+			// If buying you're lifting the offer, if selling you're hitting the bid
+			Price transactionPrice = (side == Side::Buy) ? ask->GetPrice() : bid->GetPrice();
 			trades.push_back(Trade{
 				TradeInfo{ bid->GetOrderId(), bid->GetPrice(), quantity, bid->GetTraderID() },
-				TradeInfo{ ask->GetOrderId(), ask->GetPrice(), quantity, ask->GetTraderID() } 
+				TradeInfo{ ask->GetOrderId(), ask->GetPrice(), quantity, ask->GetTraderID() }, 
+				transactionPrice
 				});
-			
-			// Price transactionPrice = (side == Side::Buy) ? ask->GetPrice() : bid->GetPrice();
-			// trades.push_back(Trade{
-			// 	TradeInfo{ bid->GetOrderId(), bid->GetPrice(), quantity, bid->GetTraderID() },
-			// 	TradeInfo{ ask->GetOrderId(), ask->GetPrice(), quantity, ask->GetTraderID() }, 
-			// 	transactionPrice
-			// 	});
 
 			OnOrderMatched(bid->GetPrice(), quantity, bid->IsFilled());
 			OnOrderMatched(ask->GetPrice(), quantity, ask->IsFilled());

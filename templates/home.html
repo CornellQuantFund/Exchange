@@ -1,16 +1,266 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Cornell Quant Fund Exchange</title>
-  <!-- <link rel="stylesheet" href="../static/css/login.css"> -->
+  <meta charset="UTF-8" />
+  <title>cqf exchange</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa&display=swap" />
+
+  <!-- Inline CSS for demonstration; you can move this into a separate CSS file if you prefer -->
+  <style>
+    /* ------------------------------------ */
+    /* RESET & GLOBAL STYLES               */
+    /* ------------------------------------ */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #212121;
+      color: #fff;
+      font-family: 'Comfortaa', sans-serif;
+      letter-spacing: 0.05em;
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden; /* So the ticker doesn't cause horizontal scroll */
+    }
+
+    /* ------------------------------------ */
+    /* STOCK-TICKER (CQF Exchange)          */
+    /* ------------------------------------ */
+    .ticker-container {
+      position: relative;
+      width: 100%;
+      background: #000;
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 1.5vh 0; /* Use responsive units (vh, vw, etc.) */
+    }
+
+    .ticker-text {
+      display: inline-block;
+      font-size: 4vh; 
+      font-weight: bold;
+      text-transform: uppercase;
+      animation: ticker 10s linear infinite;
+      color: rgb(214, 79, 129);
+    }
+
+    @keyframes ticker {
+      0% {
+        transform: translateX(100%);
+      }
+      100% {
+        transform: translateX(-100%);
+      }
+    }
+
+    /* ------------------------------------ */
+    /* MAIN TITLE                           */
+    .main-title {
+      text-align: center;
+      font-size: 6vh; 
+      margin: 10vh 0 3vh; /* top, right/left, bottom */
+      font-weight: bold;
+    }
+
+    /* ------------------------------------ */
+    /* FORM CONTAINER                       */
+    .form {
+      max-width: 600px;
+      width: 80%;
+      margin: 5vh auto 0;
+      padding: 2vh 2vw;
+      background: linear-gradient(135deg, rgb(204,80,109), rgb(172,74,117), rgb(168,87,135));
+      color: rgb(241,220,240);
+      border-radius: 8px;
+    }
+
+    .control {
+      margin-bottom: 3vh; /* Spacing between controls */
+    }
+
+    /* Bigger font & padding for inputs, scaled to viewport */
+    .control input {
+      width: 100%;
+      padding: 2vh 2vw;
+      font-size: 3vh;
+      border: 0;
+      background: transparent;
+      color: #fff;
+    }
+
+    .control input:focus {
+      outline: none;
+    }
+
+    /* ------------------------------------ */
+    /* BLOCK CUBE / VISUAL FX               */
+    .block-cube {
+      position: relative;
+    }
+    .block-cube .bg-top,
+    .block-cube .bg-right,
+    .block-cube .bg {
+      background: rgba(255, 255, 255, 0.5);
+      transition: background 0.2s ease-in-out;
+    }
+    .block-cube .bg-top {
+      position: absolute;
+      height: 10px;
+      bottom: 100%;
+      left: 5px;
+      right: -5px;
+      transform: skew(-45deg, 0);
+    }
+    .block-cube .bg-right {
+      position: absolute;
+      top: -5px;
+      bottom: 5px;
+      width: 10px;
+      left: 100%;
+      transform: skew(0, -45deg);
+    }
+    .block-cube .bg {
+      position: absolute;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+    }
+    .block-cube .bg-inner {
+      background: #212121;
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      right: 2px;
+      bottom: 2px;
+      transition: all 0.2s ease-in-out;
+    }
+    .block-cube.block-input input {
+      position: relative;
+      z-index: 2;
+    }
+    .block-cube.block-input input:focus ~ .bg-right .bg-inner,
+    .block-cube.block-input input:focus ~ .bg-top .bg-inner,
+    .block-cube.block-input input:focus ~ .bg .bg-inner {
+      top: 100%;
+      background: rgba(255, 255, 255, 0.5);
+    }
+    .block-cube.block-input:hover .bg-top,
+    .block-cube.block-input:hover .bg-right,
+    .block-cube.block-input:hover .bg {
+      background: rgba(255, 255, 255, 0.8);
+    }
+    .block-cube.block-cube-hover:hover .bg .bg-inner {
+      top: 100%;
+    }
+
+    /* ------------------------------------ */
+    /* BUTTON                               */
+    .btn {
+      width: 100%;
+      display: block;
+      padding: 2vh 2vw;
+      background: transparent;
+      border: 0;
+      color: #fff;
+      letter-spacing: 0.1em;
+      font-weight: bold;
+      font-size: 3vh;
+      font-family: monospace, serif;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ------------------------------------ */
+    /* SIGN IN HEADING                      */
+    .sign-in-heading {
+      font-size: 4vh;
+      margin-bottom: 2vh;
+    }
+
+    /* ------------------------------------ */
+    /* CQF LOGO (Bottom Left)               */
+    .logo-container {
+      position: fixed;
+      bottom: 2vh;
+      left: 2vw;
+      z-index: 100;
+    }
+
+    /* Adjust width as needed */
+    .logo-container img {
+      width: 12vw; /* or any size you prefer */
+      max-width: 200px;
+      height: auto;
+    }
+  </style>
+
 </head>
 <body>
-  <div class="login-container">
-    <h1>Welcome to the Cornell Quant Fund Exchange</h1>
-    <form action="/submit" method="post">
-      <input type="text" name="username" placeholder="Username" required />
-      <button type="submit">Sign In</button>
-    </form>
+
+  <!-- STOCK-TICKER BANNER -->
+  <div class="ticker-container">
+    <div class="ticker-text">CQF Exchange • CQF Exchange • CQF Exchange • CQF Exchange • CQF Exchange • CQF Exchange • CQF Exchange •</div>
   </div>
+
+  <!-- MAIN TITLE -->
+  <div class="main-title">Cornell Quant Funds Trading Platform</div>
+
+  <!-- SIGN-IN FORM -->
+  <form class="form" action="/submit" method="post" autocomplete="off">
+
+    <!-- SIGN IN HEADING -->
+    <div class="control">
+      <h2 class="sign-in-heading">Sign In</h2>
+    </div>
+
+    <!-- USERNAME INPUT ONLY -->
+    <div class="control block-cube block-input">
+      <input 
+        type="text" 
+        name="username" 
+        placeholder="Username" 
+        required
+      >
+      <div class="bg-top">
+        <div class="bg-inner"></div>
+      </div>
+      <div class="bg-right">
+        <div class="bg-inner"></div>
+      </div>
+      <div class="bg">
+        <div class="bg-inner"></div>
+      </div>
+    </div>
+
+    <!-- LOGIN BUTTON -->
+    <button 
+      class="btn block-cube block-cube-hover"
+      type="submit"
+    >
+      <div class="bg-top">
+        <div class="bg-inner"></div>
+      </div>
+      <div class="bg-right">
+        <div class="bg-inner"></div>
+      </div>
+      <div class="bg">
+        <div class="bg-inner"></div>
+      </div>
+      <div class="text">Submit</div>
+    </button>
+  </form>
+
+  <!-- CQF LOGO (Bottom Left) -->
+  <div class="logo-container">
+    <!-- Update the src path to match the actual file name & location in your images folder -->
+    <img src="static/images/cqf-logo.png" alt="CQF Logo">
+  </div>
+
 </body>
 </html>

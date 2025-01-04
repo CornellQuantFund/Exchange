@@ -7,11 +7,15 @@
 
 using namespace std;
 using json = nlohmann::json;
-// NEED TO FIX THIS TO TRACK ORDER OWNERS AND ENSURE YOU DONT TRADE WITH YOURSELF
-
 static int OrderID = 1; // Static counter for unique order IDs
 
+
+// Currently allows individuals to trade with themselves. cant materially affect pnl
+// so ignored for now but can be fixed
+
 void Exchange::placeOrder(const int contract, const string& orderType, const string& order_side, double price, int quantity, int traderID) {
+    // Price doesnt matter for market order
+    
     Side side = (order_side == "buy") ? Side::Buy : Side::Sell;
     OrderType type = (orderType == "limit") ? OrderType::GoodTillCancel : OrderType::Market;
 
@@ -30,6 +34,7 @@ void Exchange::placeOrder(const int contract, const string& orderType, const str
         tradeDetails["buyerTraderID"] = buyerId;
         tradeDetails["sellerTraderID"] = sellerId;
         tradeDetails["contract"] = contract; // If trade occured has to have been on contract submitted on
+        tradeDetails["transactionPrice"] = trade.GetTransactionPrice();
         tradeDetails["buy"] = {
             {"price", trade.GetBidTrade().price_},
             {"quantity", trade.GetBidTrade().quantity_}
@@ -87,9 +92,10 @@ void Exchange::calculateTradersPnl() {
 
             int buyQuantity = tradeInfo["buy"]["quantity"];
             int sellQuantity = tradeInfo["sell"]["quantity"];
+            Price transactionPrice = tradeInfo["transactionPrice"];
 
-            double buyerPnl = (contractPrices[contract] - buyPrice) * buyQuantity;
-            double sellerPnl = (sellPrice - contractPrices[contract]) * sellQuantity;
+            double buyerPnl = (contractPrices[contract] - transactionPrice) * buyQuantity;
+            double sellerPnl = (transactionPrice - contractPrices[contract]) * sellQuantity;
 
             traders[buyerId].addProfit(buyerPnl);
             traders[sellerId].addProfit(sellerPnl);
