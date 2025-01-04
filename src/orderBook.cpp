@@ -181,7 +181,7 @@ bool Orderbook::CanMatch(Side side, Price price) const
 	}
 }
 
-Trades Orderbook::MatchOrders()
+Trades Orderbook::MatchOrders(Side side)
 {
 	Trades trades;
 	trades.reserve(orders_.size());
@@ -218,12 +218,17 @@ Trades Orderbook::MatchOrders()
 				asks.pop_front();
 				orders_.erase(ask->GetOrderId());
 			}
-
-
 			trades.push_back(Trade{
-				TradeInfo{ bid->GetOrderId(), bid->GetPrice(), quantity },
-				TradeInfo{ ask->GetOrderId(), ask->GetPrice(), quantity } 
+				TradeInfo{ bid->GetOrderId(), bid->GetPrice(), quantity, bid->GetTraderID() },
+				TradeInfo{ ask->GetOrderId(), ask->GetPrice(), quantity, ask->GetTraderID() } 
 				});
+			
+			// Price transactionPrice = (side == Side::Buy) ? ask->GetPrice() : bid->GetPrice();
+			// trades.push_back(Trade{
+			// 	TradeInfo{ bid->GetOrderId(), bid->GetPrice(), quantity, bid->GetTraderID() },
+			// 	TradeInfo{ ask->GetOrderId(), ask->GetPrice(), quantity, ask->GetTraderID() }, 
+			// 	transactionPrice
+			// 	});
 
 			OnOrderMatched(bid->GetPrice(), quantity, bid->IsFilled());
 			OnOrderMatched(ask->GetPrice(), quantity, ask->IsFilled());
@@ -318,7 +323,7 @@ Trades Orderbook::AddOrder(OrderPointer order)
 	
 	OnOrderAdded(order);
 	
-	return MatchOrders();
+	return MatchOrders(order->GetSide());
 
 }
 

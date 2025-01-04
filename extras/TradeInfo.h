@@ -7,4 +7,5 @@ struct TradeInfo
     OrderId orderId_;
     Price price_;
     Quantity quantity_;
+    int traderID_;
 };

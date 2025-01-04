@@ -10,15 +10,13 @@ using namespace httplib;
 using json = nlohmann::json;
 
 Exchange session(3);
-static vector<string> users;
 static unordered_map<string, int> traderIDs;
 
 int main() {
-    // Clear the contents of completed.json file before starting the server
-    ofstream completedFile("completed.json", ofstream::out | ofstream::trunc);
+    // Clear the contents of completedTrades file before starting the server
+    ofstream completedFile("completedTrades.json", ofstream::out | ofstream::trunc);
     completedFile.close();
 
-    
     httplib::Server svr;
     svr.set_mount_point("/static", "./static");
 
@@ -37,24 +35,31 @@ int main() {
     // Handle form submission for adding users
     svr.Post("/submit", [&](const Request& req, Response& res) {
         auto username = req.get_param_value("username");
-        if (!username.empty() && traderIDs.find(username) == traderIDs.end()) {
-            users.push_back(username);
+        inja::Environment env;
+        json data;
 
+        if (username.empty()) {
+            res.set_content("Error: Username cannot be empty", "text/plain");
+            return;
+        }
+        else if (traderIDs.empty() || traderIDs.find(username) == traderIDs.end()) {
+            // New user
             Trader newTrader(username, 0, vector<OrderPointer>());
             session.addTrader(newTrader);
             traderIDs[username] = newTrader.getId();
-            
-            inja::Environment env;
+        }
+        try {
+            int currTraderID = traderIDs[username];
             auto tmpl = env.parse_template("templates/tradeFloor.html");
-            json data;
+            
             data["username"] = username;
-            data["id"] = to_string(traderIDs[username]);
-            data["tradeData"] = "";
+            data["id"] = to_string(currTraderID);
+            data["tradeData"] = session.getTrader(currTraderID).getOrdersFormatted();
             string rendered = env.render(tmpl, data);
             res.set_content(rendered, "text/html");
         }
-        else {
-            res.set_content("Error: Username already exists or is empty", "text/plain");
+        catch (const exception& e) {
+            res.set_content("Error: " + string(e.what()), "text/plain");
             return;
         }
     });
@@ -97,7 +102,6 @@ int main() {
         string rendered = env.render(tmpl, data);
         res.set_content(rendered, "text/html");
     });
-
     
     // Handle order submission in main.cpp
     svr.Post("/submit_order", [&](const Request& req, Response& res) {
@@ -222,7 +226,7 @@ int main() {
 
     svr.Get("/users", [&](const Request& req, Response& res) {
         string response = "<h2>Current Users:</h2><ul>";
-        for (auto& u : users) {
+        for (auto& [u, _] : traderIDs) {
             response += "<li>" + u + "</li>";
         }
         response += "</ul><a href=\"/\">Go Back</a>";
@@ -230,5 +234,6 @@ int main() {
     });
     cout << "Server started at http://localhost:8080" << endl;
     svr.listen("0.0.0.0", 8080);
+
     return 0;
 }

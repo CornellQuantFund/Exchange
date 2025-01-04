@@ -8,7 +8,6 @@ using namespace std;
 
 class Exchange {
     unordered_map<int, Trader> traders;
-    unordered_map<OrderId, int> orderOwnerMap;
     vector<shared_ptr<Orderbook>> orderBooks; // Use shared_ptr
     vector<double> contractSettlements;
 
