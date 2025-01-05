@@ -51,10 +51,10 @@ int main() {
         try {
             int currTraderID = traderIDs[username];
             auto tmpl = env.parse_template("templates/tradeFloor.html");
-            
+
             data["username"] = username;
             data["id"] = to_string(currTraderID);
-            data["tradeData"] = session.getTrader(currTraderID).getOrdersFormatted();
+            data["tradeData"] = session.getTrader(currTraderID).getOrdersFormatted() + '\n';
             string rendered = env.render(tmpl, data);
             res.set_content(rendered, "text/html");
         }
@@ -98,7 +98,8 @@ int main() {
         json data;
         data["username"] = username;
         data["id"] = currTraderID;
-        data["tradeData"] = session.getTrader(currTraderID).getOrdersFormatted() + "\n";
+        data["tradeData"] = session.getTrader(currTraderID).getOrdersFormatted();
+        data["tradeDataJson"] = session.getTrader(currTraderID).getOrdersJson();   
         string rendered = env.render(tmpl, data);
         res.set_content(rendered, "text/html");
     });

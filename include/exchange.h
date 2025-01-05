@@ -21,10 +21,7 @@ class Exchange {
             // contractSettlements.resize(numOrderBooks);
         }
 
-        void addContractSettlement(int contract, double settlePrice) {
-            contractSettlements[contract] = settlePrice;
-        }
-
+        void addContractSettlement(int contract, double settlePrice) { contractSettlements[contract] = settlePrice; }
         void addContractSettlement(vector<double>& settlePrices) {
             if (settlePrices.size() != contractSettlements.size()) {
                 throw invalid_argument("Invalid number of settlement prices");
@@ -37,21 +34,15 @@ class Exchange {
             traders[id] = trader;
         }
 
-        vector<shared_ptr<Orderbook>>& getOrderBooks() {
-            return orderBooks;
-        }
-
+        vector<shared_ptr<Orderbook>>& getOrderBooks() { return orderBooks; }
         vector<double>& getContractSettlements() { return contractSettlements; }
-
         Orderbook& getOrderBook(int index) {
             if (index < 0 || index >= orderBooks.size()) {
                 throw out_of_range("Invalid order book index");
             }
             return *orderBooks[index];
         }
-
         int getNumOrderBooks() { return orderBooks.size(); }
-
         Trader getTrader(int id) { return traders[id]; }
 
         vector<Trader> getTraders() {
@@ -62,6 +53,14 @@ class Exchange {
 
         // Place an order with multiple orderBooks active
         void placeOrder(const int contract, const string& orderType, const string& order_side, double price, int quantity, int traderID);
+
+        void cancelOrder(int contract, OrderId orderId, int traderID) {
+            if (contract < 0 || contract >= orderBooks.size()) {
+                throw out_of_range("Invalid contract index");
+            }
+            getOrderBook(contract).CancelOrder(orderId);
+            // getTrader(traderID).cancelOrder(orderId);
+        }
 
         void calculateTradersPnl();
 };;

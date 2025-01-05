@@ -1,56 +1,136 @@
-
-body {
+/* ------------------------- */
+/* GLOBAL / RESETS          */
+/* ------------------------- */
+* {
     margin: 0;
     padding: 0;
-    font-family: 'Comfortaa', sans-serif;
-    background-color: #f5f5f5;
-}
-
-.container {
-    width: 80%;
-    margin: auto;
-    padding: 20px;
-    background-color: #fff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-h1 {
-    text-align: center;
-    margin-bottom: 30px;
-    color: #333;
-}
-
-.order-form {
-    max-width: 400px;
-    margin: 0 auto;
-}
-
-.order-form label {
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #444;
-}
-
-.order-form input,
-.order-form select {
+    box-sizing: border-box;
+  }
+  
+  html, body {
     width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-.order-form button {
-    padding: 10px 20px;
-    border: none;
-    background-color: #007bff;
+    height: 100%;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #111; /* Dark background to evoke a "trading floor" feel */
+    color: #eee;
+  }
+  
+  /* ------------------------- */
+  /* CONTAINER & HEADER        */
+  /* ------------------------- */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+  }
+  
+  .container h1 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
     color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  
+  /* ------------------------- */
+  /* ORDER FORM                */
+  /* ------------------------- */
+  .order-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    background-color: #222;
+    padding: 1rem;
+    border-radius: 4px;
+  }
+  
+  .order-form label {
+    font-weight: 500;
+    min-width: 90px;
+  }
+  
+  .order-form select,
+  .order-form input[type="number"] {
+    padding: 0.5rem 0.75rem;
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 4px;
+  }
+  
+  .order-form button[type="submit"] {
+    background-color: #3dc16f; /* A bright color for the “Place Order” button */
+    color: #fff;
+    padding: 0.6rem 1rem;
     font-weight: bold;
+    border: none;
     border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.order-form button:hover {
-    background-color: #0056b3;
-}
+  }
+  
+  .order-form button[type="submit"]:hover {
+    background-color: #36a262;
+  }
+  
+  /* ------------------------- */
+  /* TRADE DATA SECTION        */
+  /* ------------------------- */
+  section {
+    background-color: #222;
+    padding: 1rem;
+    border-radius: 4px;
+  }
+  
+  section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    color: #fff;
+  }
+  
+  /* If you want to display trade data in a table: */
+  .trade-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+  }
+  
+  .trade-table thead {
+    background-color: #444;
+    text-transform: uppercase;
+  }
+  
+  .trade-table th,
+  .trade-table td {
+    border: 1px solid #444;
+    padding: 0.75rem 1rem;
+    text-align: center;
+  }
+  
+  /* Example coloring for Buy vs. Sell */
+  .buy-order {
+    color: #00ff9f;
+    font-weight: bold;
+  }
+  .sell-order {
+    color: #ff6d6d;
+    font-weight: bold;
+  }
+  
+  /* Delete button style */
+  .delete-btn {
+    background-color: #d14848; /* Reddish to highlight destructive action */
+    color: #fff;
+    border: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .delete-btn:hover {
+    background-color: #b33d3d;
+  }
+  

@@ -2,9 +2,10 @@
 #include <vector>
 #include <iostream>
 #include "../extras/Order.h"
+#include "../inja/inja.hpp" 
 
 using namespace std;
-
+using json = nlohmann::json;
 static int id_counter = 0;
 
 class Trader {
@@ -34,8 +35,25 @@ public:
     string getOrdersFormatted() {
         string formatted = "";
         for (auto& order : orders) {
+            if (order->GetRemainingQuantity() == 0) continue;
+
             formatted += "Order ID: " + to_string(order->GetOrderId()) + " Side: " + (order->GetSide() == Side::Buy ? "Buy" : "Sell") + " Price: " + to_string(order->GetPrice()) + " Quantity: " + to_string(order->GetRemainingQuantity()) + "\n";
         }
         return formatted;
+    }
+
+    json getOrdersJson() {
+        json ordersJson;
+        for (auto& order : orders) {
+            if (order->GetRemainingQuantity() == 0) continue;
+
+            json orderJson;
+            orderJson["orderId"] = order->GetOrderId();
+            orderJson["side"] = order->GetSide() == Side::Buy ? "Buy" : "Sell";
+            orderJson["price"] = order->GetPrice();
+            orderJson["quantity"] = order->GetRemainingQuantity();
+            ordersJson.push_back(orderJson);
+        }
+        return ordersJson;
     }
 };

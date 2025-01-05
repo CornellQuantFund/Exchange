@@ -4,11 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trade Floor</title>
+    <!-- Link your new style here -->
     <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
     <div class="container">
         <h1>Trade Floor for {{username}} (ID: {{id}})</h1>
+
+        <!-- ORDER FORM -->
         <form class="order-form" action="/tradeFloor" method="post">
             <label for="contract">Contract:</label>
             <select id="contract" name="contract">
@@ -30,10 +33,10 @@
             </select>
 
             <label for="price">Price:</label>
-            <input type="number" id="price" name="price" step="1" min = "0" placeholder="Enter price">
+            <input type="number" id="price" name="price" step="1" min="0" placeholder="Enter price">
 
             <label for="quantity">Quantity:</label>
-            <input type="number" id="quantity" name="quantity" step = "1" min = "0" placeholder="Enter quantity">
+            <input type="number" id="quantity" name="quantity" step="1" min="0" placeholder="Enter quantity" required>
 
             <input type="hidden" id="username" name="username" value="{{username}}">
             <input type="hidden" id="id" name="id" value="{{id}}">
@@ -45,13 +48,13 @@
                 });
             </script>
 
-
             <button type="submit">Place Order</button>
         </form>
 
+        <!-- TRADE DATA SECTION -->
         <section>
             <h2>Trade Data</h2>
-            {{tradeData}}
+            <p> {{tradeData}} </p>
         </section>
     </div>
 </body>
