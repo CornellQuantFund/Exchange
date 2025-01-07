@@ -23,3 +23,5 @@ EXPOSE 9090
 
 # Specify the default command to run the application
 CMD ["./main"]
+
+
