@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Link to your CSS file for styling -->
+    <link rel="stylesheet" href="/static/style.css" />
+    <style>
+        /* Basic styling for the admin dashboard */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: #fff;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        .pnl-section, .traders-section {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .pnl-section button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #28a745;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .pnl-section button:hover {
+            background-color: #218838;
+        }
+
+        .traders-section ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .traders-section li {
+            background: #f9f9f9;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Dashboard</h1>
+        
+        <!-- 1. Button to Calculate PnL -->
+        <div class="pnl-section">
+            <form action="/calculatePnl" method="post">
+                <button type="submit">Calculate PnL</button>
+            </form>
+        </div>
+        
+        <!-- 2. Display List of Current Traders -->
+        <div class="traders-section">
+            <h2>Current Traders</h2>
+            <ul>
+                {% for user in traders %}
+                    <li style="color: black;">{{ user }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

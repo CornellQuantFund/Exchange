@@ -1,61 +1,444 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trade Floor</title>
-    <!-- Link your new style here -->
-    <link rel="stylesheet" href="/static/style.css" />
+  <meta charset="UTF-8">
+  <title>Trade Floor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-    <div class="container">
-        <h1>Trade Floor for {{username}} (ID: {{id}})</h1>
+<div class="page-container">
+  <h1>Trade Floor for {{username}}</h1>
 
-        <!-- ORDER FORM -->
-        <form class="order-form" action="/tradeFloor" method="post">
-            <label for="contract">Contract:</label>
-            <select id="contract" name="contract">
-                <option value="1">Contract 1</option>
-                <option value="2">Contract 2</option>
-                <option value="3">Contract 3</option>
-            </select>
-
-            <label for="order-type">Order Type:</label>
-            <select id="order-type" name="order-type">
-                <option value="market">Market</option>
-                <option value="limit">Limit</option>
-            </select>
-
-            <label for="order-side">Order Side:</label>
-            <select id="order-side" name="order-side">
-                <option value="buy">Buy</option>
-                <option value="sell">Sell</option>
-            </select>
-
-            <label for="price">Price:</label>
-            <input type="number" id="price" name="price" step="1" min="0" placeholder="Enter price">
-
-            <label for="quantity">Quantity:</label>
-            <input type="number" id="quantity" name="quantity" step="1" min="0" placeholder="Enter quantity" required>
-
-            <input type="hidden" id="username" name="username" value="{{username}}">
-            <input type="hidden" id="id" name="id" value="{{id}}">
-            <input type="hidden" id="isSubmitted" name="isSubmitted" value="false">
-
-            <script>
-                document.querySelector('form').addEventListener('submit', function() {
-                    document.getElementById('isSubmitted').value = 'true';
-                });
-            </script>
-
-            <button type="submit">Place Order</button>
-        </form>
-
-        <!-- TRADE DATA SECTION -->
-        <section>
-            <h2>Trade Data</h2>
-            <p> {{tradeData}} </p>
-        </section>
+  <!-- MAIN CONTENT: Orders + Orderbook side by side -->
+  <div class="main-content">
+    <!-- YOUR ORDERS -->
+    <div class="orders-panel panel">
+      <h2>Your Orders</h2>
+      <div class="tab-buttons orders-tabs"></div>
+      <div class="tab-content orders-content"></div>
     </div>
+
+    <!-- ORDERBOOK -->
+    <div class="orderbook-panel panel">
+      <h2>Orderbook</h2>
+      <div class="tab-buttons orderbook-tabs"></div>
+      <div class="tab-content orderbook-content"></div>
+    </div>
+  </div>
+
+  <div id="orderForm" class="submission-panel panel">
+    <h2>Place a New Order</h2>
+        <!-- ORDER FORM -->
+        <form id="orderFormElement" class="submission-panel" action="/tradeFloor" method="post">
+          <label for="contract">Contract:</label>
+          <select id="contract" name="contract">
+              <option value="1">Contract 1</option>
+              <option value="2">Contract 2</option>
+              <option value="3">Contract 3</option>
+          </select>
+
+          <label for="order-type">Order Type:</label>
+          <select id="order-type" name="order-type">
+              <option value="market">Market</option>
+              <option value="limit">Limit</option>
+          </select>
+
+          <label for="order-side">Order Side:</label>
+          <select id="order-side" name="order-side">
+              <option value="buy">Buy</option>
+              <option value="sell">Sell</option>
+          </select>
+
+          <label for="price">Price:</label>
+          <input type="number" id="price" name="price" step="1" min="0" placeholder="Enter price">
+
+          <label for="quantity">Quantity:</label>
+          <input type="number" id="quantity" name="quantity" step="1" min="0" placeholder="Enter quantity" required>
+
+          <input type="hidden" id="username" name="username" value="{{username}}">
+          <input type="hidden" id="id" name="id" value="{{id}}">
+          <input type="hidden" id="isSubmitted" name="isSubmitted" value="false">
+
+          <script>
+              document.querySelector('form').addEventListener('submit', function() {
+                  document.getElementById('isSubmitted').value = 'true';
+              });
+          </script>
+
+          <button type="submit" class="order-btn">Place Order</button>
+      </form>
+  </div>
+</div>
+
+<script>
+
+  document.getElementById('orderFormElement').addEventListener('submit', function(e) {
+    // e.preventDefault() if you want an AJAX submission
+    document.getElementById('isSubmitted').value = 'true';
+  });
+
+  // We'll store the username for reference
+  const username = "{{username}}";
+
+  // Track which contract tab is active for "Your Orders" and for "Orderbook".
+  // Default to 0 (Contract 1) for each on initial load.
+  let activeOrdersTab = 0;
+  let activeOrderbookTab = 0;
+
+  // ----------------------------------
+  // 1) Connect to WebSocket on port 9090
+  // ----------------------------------
+  let ws;
+  function connectWebSocket() {
+    // If everything is local, 'ws://localhost:9090'
+    // If behind HTTPS, use wss://
+    ws = new WebSocket("ws://localhost:9090");
+    ws.onopen = () => {
+      console.log("WebSocket connected!");
+
+      // Send registration message
+      const regMsg = {
+          type: "register",
+          username: username
+      };
+      ws.send(JSON.stringify(regMsg));
+    };
+    ws.onmessage = (evt) => {
+      // The server sends JSON of the entire market + all traders or PnL messages
+      let data = JSON.parse(evt.data);
+
+      if(data.type === "pnl") {
+          // Handle PnL message
+          showPnLPopup(data.pnl);
+      } else {
+          // Handle market data
+          renderMarket(data);
+      }
+    };
+    ws.onclose = () => {
+      console.log("WebSocket closed. Reconnecting in 2s...");
+      setTimeout(connectWebSocket, 2000);
+    };
+  }
+  connectWebSocket();
+
+  // Function to show PnL pop-up
+  function showPnLPopup(pnl) {
+      // Create a modal or a simple alert
+      // Here, we'll create a styled modal
+      // First, check if modal exists
+      if(document.getElementById('pnlModal')) return; // Prevent multiple modals
+
+      // Create modal elements
+      const modal = document.createElement('div');
+      modal.id = 'pnlModal';
+      modal.style.position = 'fixed';
+      modal.style.top = '0';
+      modal.style.left = '0';
+      modal.style.width = '100%';
+      modal.style.height = '100%';
+      modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+      modal.style.display = 'flex';
+      modal.style.alignItems = 'center';
+      modal.style.justifyContent = 'center';
+      modal.style.zIndex = '1000';
+
+      const modalContent = document.createElement('div');
+      modalContent.style.backgroundColor = '#fff';
+      modalContent.style.padding = '20px';
+      modalContent.style.borderRadius = '5px';
+      modalContent.style.boxShadow = '0 2px 8px rgba(0,0,0,0.26)';
+      modalContent.style.textAlign = 'center';
+      modalContent.innerHTML = `
+          <h2 style="color: black;">Thank You For Trading</h2>
+          <p style="color: black;">Your PnL is: <strong>$${pnl.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</strong></p>
+          <button id="closeModalBtn" style="
+          padding: 10px 20px;
+          margin-top: 20px;
+          background-color: #007BFF;
+          color: #fff;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          ">Close</button>
+      `;
+
+      modal.appendChild(modalContent);
+      document.body.appendChild(modal);
+
+      // Add event listener to close button
+      document.getElementById('closeModalBtn').addEventListener('click', () => {
+          document.body.removeChild(modal);
+      });
+  }
+
+  // ----------------------------------
+  // 3) Render the entire market with:
+  //    - The user's orders
+  //    - The orderbooks
+  // ----------------------------------
+  function renderMarket(data) {
+    // data.orderbooks => array of { contractIndex, bids, asks }
+    // data.allTraderData => { username1: [...], username2: [...], ... }
+    const orderbooks = data.orderbooks || [];
+    let userOrders = data.allTraderData[username] || [];
+    console.log(username)
+    console.log("User Orders:", userOrders);
+    console.log("Orderbooks:", orderbooks);
+
+    renderYourOrdersTabs(orderbooks.length, userOrders);
+    renderOrderbookTabs(orderbooks);
+  }
+
+  // RENDER: TABBED "YOUR ORDERS"
+  function renderYourOrdersTabs(contractCount, userOrders) {
+    const tabsContainer    = document.querySelector('.orders-tabs');
+    const contentContainer = document.querySelector('.orders-content');
+    tabsContainer.innerHTML    = '';
+    contentContainer.innerHTML = '';
+
+    for (let i = 0; i < contractCount; i++) {
+      const btn = document.createElement('button');
+      btn.classList.add('tab-btn');
+      btn.textContent = `Contract ${i + 1}`;
+
+      // If i matches our activeOrdersTab, highlight it
+      if (i === activeOrdersTab) btn.classList.add('active');
+
+      // On click, set active tab
+      btn.addEventListener('click', () => {
+        activeOrdersTab = i; // remember user's choice
+        updateOrdersTabUI(tabsContainer, contentContainer, contractCount, userOrders);
+      });
+
+      tabsContainer.appendChild(btn);
+    }
+
+    // Build the actual tab panes
+    for (let i = 0; i < contractCount; i++) {
+      const pane = document.createElement('div');
+      pane.className = `tab-pane orders-pane-${i}`;
+
+      // Filter user orders that belong to contract i
+      let filtered = userOrders.filter(o => o.contract === i);
+
+      let tableHtml = `
+        <table class="trade-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Side</th>
+              <th>Price</th>
+              <th>Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      filtered.forEach(ord => {
+        tableHtml += `
+          <tr>
+            <td>${ord.orderId}</td>
+            <td class="${ord.side.toLowerCase() === 'buy' ? 'buy-order' : 'sell-order'}">${ord.side}</td>
+            <td>${ord.price}</td>
+            <td>${ord.quantity}</td>
+          </tr>
+        `;
+      });
+
+      tableHtml += `
+          </tbody>
+        </table>
+      `;
+
+      pane.innerHTML = tableHtml;
+      contentContainer.appendChild(pane);
+    }
+
+    // Finally, update the display states
+    updateOrdersTabUI(tabsContainer, contentContainer, contractCount, userOrders);
+  }
+
+  // Helper: Show only the activeOrdersTab pane, highlight the correct button
+  function updateOrdersTabUI(tabsContainer, contentContainer, contractCount, userOrders) {
+    // Remove .active from all buttons, then add it to the activeOrdersTab
+    const allBtns = tabsContainer.querySelectorAll('button');
+    allBtns.forEach((b, idx) => {
+      b.classList.remove('active');
+      if (idx === activeOrdersTab) b.classList.add('active');
+    });
+
+    // Hide all panes, then show the active one
+    const allPanes = contentContainer.querySelectorAll('.tab-pane');
+    allPanes.forEach((pane, idx) => {
+      pane.style.display = (idx === activeOrdersTab) ? 'block' : 'none';
+    });
+  }
+
+    /**
+   * Takes an array of orders (tradeDataJson),
+   * and returns an array orderbooks, where each element has:
+   *   {
+   *     contractIndex: <integer>,
+   *     bids: [ { ... }, ... ],
+   *     asks: [ { ... }, ... ]
+   *   }
+   *
+   * We'll assume the maximum contract found in the orders is how many
+   * "orderbooks" we produce. If you know you always have 3, you could
+   * just create an array of length 3.
+   */
+  function buildOrderbooksFromOrders(ordersArr) {
+    // Find the largest contract index in the data
+    let maxContract = 0;
+    ordersArr.forEach(o => {
+      if (o.contract > maxContract) {
+        maxContract = o.contract;
+      }
+    });
+
+    // Create an array of orderbooks
+    // e.g., if maxContract=2, we build indices [0,1,2]
+    let orderbooks = [];
+    for (let i = 0; i <= maxContract; i++) {
+      orderbooks.push({
+        contractIndex: i,
+        bids: [],
+        asks: []
+      });
+    }
+
+    // Distribute orders into each orderbook's bids/asks
+    ordersArr.forEach(o => {
+      const idx = o.contract; // 0-based
+      if (o.side.toLowerCase() === "buy") {
+        orderbooks[idx].bids.push(o);
+      } else {
+        orderbooks[idx].asks.push(o);
+      }
+    });
+    return orderbooks;
+  }
+
+
+  // RENDER: TABBED "ORDERBOOK"
+  function renderOrderbookTabs(orderbooks) {
+    const tabsContainer    = document.querySelector('.orderbook-tabs');
+    const contentContainer = document.querySelector('.orderbook-content');
+    tabsContainer.innerHTML    = '';
+    contentContainer.innerHTML = '';
+
+    // Build tab buttons for each orderbook
+    for (let i = 0; i < orderbooks.length; i++) {
+      const btn = document.createElement('button');
+      btn.classList.add('tab-btn');
+      btn.textContent = `Contract ${i + 1}`;
+
+      if (i === activeOrderbookTab) {
+        btn.classList.add('active');
+      }
+
+      btn.addEventListener('click', () => {
+        activeOrderbookTab = i; // remember user's choice
+        updateOrderbookTabUI(tabsContainer, contentContainer, orderbooks);
+      });
+
+      tabsContainer.appendChild(btn);
+    }
+
+    // Build the table content for each orderbook
+    for (let i = 0; i < orderbooks.length; i++) {
+      const { contractIndex, bids, asks } = orderbooks[i];
+      const pane = document.createElement('div');
+      pane.className = `tab-pane ob-pane-${i}`;
+
+      // For a "stacked column" style, find max quantity among bids+asks
+      let maxQty = 0;
+      (bids || []).forEach(b => { if (b.quantity > maxQty) maxQty = b.quantity; });
+      (asks || []).forEach(a => { if (a.quantity > maxQty) maxQty = a.quantity; });
+
+      // Build the side-by-side Bids + Asks tables
+      let contentHtml = `
+        <div class="orderbook-depth">
+          <div class="bids-col">
+            <table class="trade-table depth-table">
+              <thead>
+                <tr><th>Quantity</th><th>Bid</th></tr>
+              </thead>
+              <tbody>
+      `;
+
+      // Sort bids descending by price
+      let sortedBids = (bids || []).slice().sort((a, b) => b.price - a.price);
+      sortedBids.forEach(b => {
+        let w = (b.quantity / maxQty) * 100;
+        contentHtml += `
+          <tr class="depth-row bid-row">
+            <td class="qty-cell">
+              <div class="depth-bar" style="width:${w}%; background-color:rgba(0,255,0,0.15)"></div>
+              <span>${b.quantity}</span>
+            </td>
+            <td>${b.price}</td>
+          </tr>
+        `;
+      });
+
+      contentHtml += `
+              </tbody>
+            </table>
+          </div>
+          <div class="asks-col">
+            <table class="trade-table depth-table">
+              <thead>
+                <tr><th>Ask</th><th>Quantity</th></tr>
+              </thead>
+              <tbody>
+      `;
+
+      // Sort asks ascending by price
+      let sortedAsks = (asks || []).slice().sort((a, b) => a.price - b.price);
+      sortedAsks.forEach(a => {
+        let w = (a.quantity / maxQty) * 100;
+        contentHtml += `
+          <tr class="depth-row ask-row">
+            <td>${a.price}</td>
+            <td class="qty-cell">
+              <div class="depth-bar" style="width:${w}%; background-color:rgba(255,0,0,0.15)"></div>
+              <span>${a.quantity}</span>
+            </td>
+          </tr>
+        `;
+      });
+
+      contentHtml += `
+              </tbody>
+            </table>
+          </div>
+        </div> <!-- .orderbook-depth -->
+      `;
+
+      pane.innerHTML = contentHtml;
+      contentContainer.appendChild(pane);
+    }
+
+    // Finally, update the display states so only active tab is shown
+    updateOrderbookTabUI(tabsContainer, contentContainer, orderbooks);
+  }
+
+  // Helper for orderbook tabs
+  function updateOrderbookTabUI(tabsContainer, contentContainer, orderbooks) {
+    const allBtns = tabsContainer.querySelectorAll('button');
+    allBtns.forEach((b, idx) => {
+      b.classList.remove('active');
+      if (idx === activeOrderbookTab) b.classList.add('active');
+    });
+
+    const allPanes = contentContainer.querySelectorAll('.tab-pane');
+    allPanes.forEach((pane, idx) => {
+      pane.style.display = (idx === activeOrderbookTab) ? 'block' : 'none';
+    });
+  }
+</script>
 </body>
 </html>

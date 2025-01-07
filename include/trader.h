@@ -43,12 +43,13 @@ public:
     }
 
     json getOrdersJson() {
-        json ordersJson;
+        json ordersJson = json::array();
         for (auto& order : orders) {
             if (order->GetRemainingQuantity() == 0) continue;
 
             json orderJson;
             orderJson["orderId"] = order->GetOrderId();
+            orderJson["contract"] = order->GetContract();
             orderJson["side"] = order->GetSide() == Side::Buy ? "Buy" : "Sell";
             orderJson["price"] = order->GetPrice();
             orderJson["quantity"] = order->GetRemainingQuantity();

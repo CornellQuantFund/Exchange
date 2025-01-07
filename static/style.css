@@ -1,116 +1,102 @@
-/* ------------------------- */
-/* GLOBAL / RESETS          */
-/* ------------------------- */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-  
-  html, body {
-    width: 100%;
-    height: 100%;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #111; /* Dark background to evoke a "trading floor" feel */
+/*******************************************
+ * style.css
+ *******************************************/
+
+/* Global */
+body {
+    background-color: #1a1a1a;
     color: #eee;
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   }
   
-  /* ------------------------- */
-  /* CONTAINER & HEADER        */
-  /* ------------------------- */
-  .container {
+  .page-container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 1rem;
   }
   
-  .container h1 {
+  h1 {
     text-align: center;
     font-size: 2rem;
-    margin-bottom: 1.5rem;
-    color: #fff;
+    margin-bottom: 1rem;
     text-transform: uppercase;
     letter-spacing: 1px;
+    color: #fff;
   }
   
-  /* ------------------------- */
-  /* ORDER FORM                */
-  /* ------------------------- */
-  .order-form {
+  /* Panels + Layout */
+  .main-content {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
     gap: 1rem;
     margin-bottom: 2rem;
-    background-color: #222;
+  }
+  
+  .panel {
+    background-color: #2c2c2c;
+    border-radius: 4px;
     padding: 1rem;
-    border-radius: 4px;
+    flex: 1;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
   }
-  
-  .order-form label {
-    font-weight: 500;
-    min-width: 90px;
-  }
-  
-  .order-form select,
-  .order-form input[type="number"] {
-    padding: 0.5rem 0.75rem;
-    background-color: #333;
-    color: #fff;
-    border: 1px solid #444;
-    border-radius: 4px;
-  }
-  
-  .order-form button[type="submit"] {
-    background-color: #3dc16f; /* A bright color for the “Place Order” button */
-    color: #fff;
-    padding: 0.6rem 1rem;
-    font-weight: bold;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  .order-form button[type="submit"]:hover {
-    background-color: #36a262;
-  }
-  
-  /* ------------------------- */
-  /* TRADE DATA SECTION        */
-  /* ------------------------- */
-  section {
-    background-color: #222;
-    padding: 1rem;
-    border-radius: 4px;
-  }
-  
-  section h2 {
+  .panel h2 {
     font-size: 1.5rem;
     margin-bottom: 1rem;
     text-transform: uppercase;
     color: #fff;
   }
   
-  /* If you want to display trade data in a table: */
+  /* Tab Buttons */
+  .tab-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .tab-btn {
+    background-color: #3b3b3b;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    border-radius: 4px;
+  }
+  .tab-btn:hover {
+    background-color: #4d4d4d;
+  }
+  .tab-btn.active {
+    background-color: #616161;
+  }
+  
+  .tab-content {
+    min-height: 150px;
+  }
+  .tab-pane {
+    display: none; /* Shown via JS for active tab */
+  }
+  
+  /* Tables */
   .trade-table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 1rem;
+    background-color: #3b3b3b;
+    color: #fff;
   }
-  
   .trade-table thead {
-    background-color: #444;
-    text-transform: uppercase;
+    background-color: #4a4a4a;
   }
-  
   .trade-table th,
   .trade-table td {
-    border: 1px solid #444;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem;
     text-align: center;
+    border: 1px solid #4a4a4a;
+    font-weight: 500;
   }
-  
-  /* Example coloring for Buy vs. Sell */
+  .trade-table th {
+    text-transform: uppercase;
+    font-weight: 600;
+  }
   .buy-order {
     color: #00ff9f;
     font-weight: bold;
@@ -120,17 +106,105 @@
     font-weight: bold;
   }
   
-  /* Delete button style */
-  .delete-btn {
-    background-color: #d14848; /* Reddish to highlight destructive action */
-    color: #fff;
-    border: none;
+  /* “Depth” Layout: side-by-side Bids/Asks */
+  .orderbook-depth {
+    display: flex;
+    gap: 1rem;
+  }
+  .bids-col,
+  .asks-col {
+    flex: 1;
+  }
+  .depth-table {
+    background-color: #2f2f2f; /* slightly different shade */
+  }
+  .depth-row {
+    position: relative;
+  }
+  .depth-bar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    z-index: -1;
+  }
+  /* For asks, we apply a right-aligned bar in JS inline style, or handle differently if you want. */
+  .qty-cell {
+    position: relative;
+    min-width: 80px; /* space for quantity text + bar */
+  }
+  
+  /* Submission Panel */
+  .submission-panel {
+    margin-bottom: 2rem;
+    background-color: #2c2c2c;
+    padding: 1rem;
+    border-radius: 4px;
+  }
+  .order-form,
+  #orderForm {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+  }
+  #orderForm label {
+    min-width: 80px;
+    font-weight: 500;
+  }
+  #orderForm select,
+  #orderForm input[type="number"] {
     padding: 0.5rem 0.75rem;
+    background-color: #444;
+    color: #fff;
+    border: 1px solid #666;
+    border-radius: 4px;
+  }
+  .order-btn {
+    background-color: #3dc16f;
+    color: #fff;
+    padding: 0.6rem 1rem;
+    font-weight: bold;
+    border: none;
     border-radius: 4px;
     cursor: pointer;
   }
-  
-  .delete-btn:hover {
-    background-color: #b33d3d;
+  .order-btn:hover {
+    background-color: #36a262;
   }
   
+  /* Responsive */
+  @media (max-width: 800px) {
+    .main-content {
+      flex-direction: column;
+    }
+  }  
+
+
+#table.scrolldown {
+  width: 100%;
+}
+
+#table.scrolldown tbody,
+#table.scrolldown thead {
+    display: block;
+}
+
+#thead tr th {
+    height: 40px;
+    line-height: 40px;
+}
+
+#table.scrolldown tbody {
+
+    /* Set the height of table body */
+    height: 50px;
+
+    /* Set vertical scroll */
+    overflow-y: auto;
+
+    /* Hide the horizontal scroll */
+    overflow-x: hidden;
+}
+
+td {
+    text-align: center;
+}
