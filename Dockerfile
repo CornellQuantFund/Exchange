@@ -1,45 +1,62 @@
-# Stage 1: Build the application
-FROM gcc:10 AS builder
+########################################################################################################################
+# Exchange Build Stage
+########################################################################################################################
 
-# Install necessary packages
-RUN apt-get update && apt-get install -y \
+FROM alpine:3.17.0 AS build
+
+# Install necessary build packages
+RUN apk update && \
+    apk add --no-cache \
+    build-base \
     cmake \
-    libboost-all-dev \
-    && rm -rf /var/lib/apt/lists/*
+    boost1.80-dev=1.80.0-r3
 
-# Set the working directory
-WORKDIR /app
+# Set the working directory for building
+WORKDIR /Exchange
 
-# Copy CMakeLists.txt and project files
-COPY CMakeLists.txt main.cpp src/ include/ /app/
+# Copy source code and CMake configuration
+COPY src/ ./src/
+COPY include/ ./include/
+COPY CMakeLists.txt .
 
 # Create build directory and compile the application
 RUN mkdir build && cd build && \
-    cmake .. && \
+    cmake -DCMAKE_BUILD_TYPE=Release .. && \
     make
 
-# Stage 2: Create the final image
-FROM gcc:10-slim
+########################################################################################################################
+# Exchange Runtime Image
+########################################################################################################################
 
-# Install runtime dependencies (Boost)
-RUN apt-get update && apt-get install -y \
-    libboost-system1.71.0 \
-    libboost-thread1.71.0 \
-    && rm -rf /var/lib/apt/lists/*
+FROM alpine:3.17.0
 
-# Set the working directory
-WORKDIR /app
+# Install runtime dependencies (Boost libraries)
+RUN apk update && \
+    apk add --no-cache \
+    libstdc++ \
+    boost1.80-program_options=1.80.0-r3
 
-# Copy the built executable from the builder stage
-COPY --from=builder /app/build/main /app/main
+# Create a non-root user and group for running the application
+RUN addgroup -S Exchange && adduser -S Exchange -G Exchange
+
+# Set the working directory inside the container
+WORKDIR /Exchange
+
+# Copy the compiled executable from the build stage
+COPY --chown=Exchange:Exchange --from=build \
+    /Exchange/build/src/Exchange \
+    ./Exchange/
 
 # Copy necessary static and template files
-COPY static/ /app/static/
-COPY templates/ /app/templates/
+COPY --chown=Exchange:Exchange static/ ./static/
+COPY --chown=Exchange:Exchange templates/ ./templates/
+
+# Switch to the non-root user
+USER Exchange
 
 # Expose the ports your application uses
 EXPOSE 8080
 EXPOSE 9090
 
-# Define the entry point
-CMD ["./main"]
+# Define the entry point to run your application
+ENTRYPOINT [ "./Exchange/main" ]
